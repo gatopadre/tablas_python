@@ -1,7 +1,13 @@
-from datasource import mysql
-import os
+# from datasource import connection
+from datasource import sybase_connection_pyodbc as connection
 
-root_path = './files'
+import os
+import configparser
+
+config = configparser.ConfigParser()
+config.read(os.path.join(os.getcwd(), 'config.ini'))
+
+root_path = config['LOCAL']['ROOT_PATH']
 
 # Obtiene el nombre de los archivos y su ubicacion
 def get_files_names():
@@ -23,11 +29,11 @@ def get_files_names():
 
 
 def check_if_exist_file_name(file_info):
-    mysql.connect()
+    connection.connect()
     query = 'select 1 from archivo_parametros where ruta = "{}" and nombre_archivo = "{}"'.format(file_info['ruta'] + '/', file_info['archivo'])
     # query = 'select 1 from archivo_parametros where ruta = "pepita" and nombre_archivo = "juenita"'
-    result = mysql.executeQuery(query)
-    mysql.disconnect()
+    result = connection.executeQuery(query)
+    connection.disconnect()
     if len(result) > 0:
         return True
     else:
@@ -35,10 +41,10 @@ def check_if_exist_file_name(file_info):
 
 
 def save_file_name(file_info):
-    mysql.connect()
+    connection.connect()
     query = 'insert into archivo_parametros(ruta, nombre_archivo)  values ("{}","{}")'.format(file_info['ruta'] + '/', file_info['archivo'])
-    result = mysql.executeUpdate(query)
-    mysql.disconnect()
+    result = connection.executeUpdate(query)
+    connection.disconnect()
     return result
 
 
@@ -46,14 +52,15 @@ def save_all_file_names(files_info):
     for file_info in files_info:
         if not check_if_exist_file_name(file_info): # evita que se repitan los archivos en la bd
             save_file_name(file_info)
+    return True
 
 
 def get_all_files_paths():
     result = False
-    mysql.connect()
+    connection.connect()
     query = 'select id, ruta, nombre_archivo from archivo_parametros'
-    result = mysql.executeQuery(query)
-    mysql.disconnect()
+    result = connection.executeQuery(query)
+    connection.disconnect()
     return result
 
 
@@ -89,11 +96,11 @@ def prepare_file_content(file_content):
 
 
 def check_if_exist_data(clave, tipo, valor, id_archivo):
-    mysql.connect()
+    connection.connect()
     query = 'select 1 from datos_archivo_parametros where clave = "{}" and tipo = "{}"' \
             'and valor = "{}" and fk_id_archivo_parametros = {}'.format(clave, tipo, valor, id_archivo)
-    result = mysql.executeQuery(query)
-    mysql.disconnect()
+    result = connection.executeQuery(query)
+    connection.disconnect()
     if len(result) > 0:
         return True
     else:
@@ -102,11 +109,11 @@ def check_if_exist_data(clave, tipo, valor, id_archivo):
 
 # guarda el contenido de los archivos
 def save_file_data(clave, tipo, valor, id_archivo):
-    mysql.connect()
+    connection.connect()
     # print('clave: {} / tipo: {} / valor: {} / id_archivo: {}'.format(clave, tipo, valor, id_archivo)) # aqui presenta los datos
     query = 'insert into datos_archivo_parametros (clave, tipo, valor, fk_id_archivo_parametros) values ("{}", "{}", "{}", {})'.format(clave, tipo, valor, id_archivo)
-    result = mysql.executeUpdate(query)
-    mysql.disconnect()
+    result = connection.executeUpdate(query)
+    connection.disconnect()
     return result
 
 
@@ -125,7 +132,7 @@ def prepare_file_data_and_save(file_info):
 
 
 def save_all_files_content(files):
-    print('Cantidad de archivos a revisar: {}'.format(len(files)))
+    print('[INFO] cantidad de archivos a revisar: {}'.format(len(files)))
     for file in files:
         prepare_file_data_and_save(file)
     return True
